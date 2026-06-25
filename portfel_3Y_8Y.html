@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfel 3Y / 8Y — Analizator Bartka</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { font-family: 'Poppins', sans-serif; }
+  body { background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 50%, #020617 100%); min-height: 100vh; }
+  .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .gradient-text { background: linear-gradient(135deg, #a78bfa 0%, #6366f1 50%, #818cf8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .gradient-bg { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); }
+  .card-hover { transition: all 0.3s ease; }
+  .card-hover:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.3); border-color: rgb(139, 92, 246) !important; }
+  .btn-grad { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); transition: all 0.3s ease; }
+  .btn-grad:hover { box-shadow: 0 10px 30px -5px rgba(124, 58, 237, 0.5); transform: translateY(-2px); }
+  .slider { -webkit-appearance: none; appearance: none; height: 8px; background: linear-gradient(90deg, #1e293b, #334155); border-radius: 8px; outline: none; }
+  .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: linear-gradient(135deg, #a78bfa, #6366f1); border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); transition: all 0.3s ease; }
+  .slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .slider::-moz-range-thumb { width: 22px; height: 22px; background: linear-gradient(135deg, #a78bfa, #6366f1); border-radius: 50%; cursor: pointer; border: none; }
+  .tab-btn { transition: all 0.3s ease; }
+  .tab-btn.active { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: white; box-shadow: 0 8px 20px -5px rgba(124, 58, 237, 0.5); }
+  .horizon-btn { transition: all 0.3s ease; }
+  .horizon-btn.active { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: white; box-shadow: 0 8px 20px -5px rgba(124, 58, 237, 0.5); }
+  .scenario-bear { border-left: 4px solid #ef4444; }
+  .scenario-base { border-left: 4px solid #8b5cf6; }
+  .scenario-bull { border-left: 4px solid #10b981; }
+  table { border-collapse: separate; border-spacing: 0; }
+  .pos-row { transition: all 0.2s ease; }
+  .pos-row:hover { background: rgba(124, 58, 237, 0.05); }
+  input.edit-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgb(71, 85, 105); color: white; border-radius: 6px; padding: 4px 8px; width: 80px; }
+  input.edit-input:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #7c3aed, #4f46e5); border-radius: 8px; }
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body class="text-slate-200">
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- HEADER -->
+  <header class="mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl gradient-bg flex items-center justify-center">
+            <i class="fa-solid fa-chart-pie text-xl text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold gradient-text">Portfel — projekcja 3Y / 8Y</h1>
+            <p class="text-xs text-slate-400">Wartość 24.06.2026 • model dopłat rocznych + compound</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="resetData()" class="px-3 py-2 rounded-xl border border-slate-700 hover:border-red-500 hover:text-red-400 transition-all text-xs">
+          <i class="fa-solid fa-rotate-left mr-1"></i>Reset
+        </button>
+        <button onclick="exportJSON()" class="px-3 py-2 rounded-xl border border-slate-700 hover:border-violet-500 hover:text-violet-400 transition-all text-xs">
+          <i class="fa-solid fa-download mr-1"></i>Eksport
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="glass rounded-2xl p-4 border border-slate-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 uppercase tracking-wider">Wartość teraz</span>
+        <i class="fa-solid fa-wallet text-violet-400"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="statTotal">—</div>
+      <div class="text-xs text-emerald-400 mt-1"><i class="fa-solid fa-arrow-up text-[10px]"></i> <span id="statReturn">—</span> łącznie</div>
+    </div>
+    <div class="glass rounded-2xl p-4 border border-slate-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 uppercase tracking-wider">Akcje</span>
+        <i class="fa-solid fa-arrow-trend-up text-violet-400"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="statStocks">—</div>
+      <div class="text-xs text-slate-400 mt-1" id="statStocksPct">— % portfela</div>
+    </div>
+    <div class="glass rounded-2xl p-4 border border-slate-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 uppercase tracking-wider">Obligacje</span>
+        <i class="fa-solid fa-shield-halved text-violet-400"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="statBonds">—</div>
+      <div class="text-xs text-slate-400 mt-1" id="statBondsPct">— % portfela</div>
+    </div>
+    <div class="glass rounded-2xl p-4 border border-slate-800 card-hover">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 uppercase tracking-wider">Gotówka</span>
+        <i class="fa-solid fa-coins text-violet-400"></i>
+      </div>
+      <div class="text-2xl font-bold text-white" id="statCash">—</div>
+      <div class="text-xs text-slate-400 mt-1" id="statCashPct">— % portfela</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <nav class="glass rounded-2xl p-1.5 border border-slate-800 mb-6 flex gap-1 flex-wrap">
+    <button class="tab-btn active flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-medium" data-tab="positions">
+      <i class="fa-solid fa-list-ul mr-1.5"></i>Pozycje
+    </button>
+    <button class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-medium" data-tab="allocation">
+      <i class="fa-solid fa-chart-pie mr-1.5"></i>Alokacja
+    </button>
+    <button class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-medium" data-tab="scenarios">
+      <i class="fa-solid fa-route mr-1.5"></i>Projekcja 3Y / 8Y
+    </button>
+    <button class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-medium" data-tab="recommendations">
+      <i class="fa-solid fa-lightbulb mr-1.5"></i>Rekomendacje
+    </button>
+  </nav>
+
+  <!-- TAB: POZYCJE -->
+  <section id="tab-positions" class="tab-content fade-in">
+    <div class="glass rounded-2xl border border-slate-800 overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h2 class="text-lg font-semibold text-white">Pozycje w portfelu</h2>
+          <p class="text-xs text-slate-400">Edytuj wartości klikając na liczby. Kolumna "Projekcja" zmienia się wraz z wyborem horyzontu (3Y/8Y) w zakładce Projekcja.</p>
+        </div>
+        <button onclick="addPosition()" class="btn-grad px-4 py-2 rounded-xl text-sm font-medium text-white">
+          <i class="fa-solid fa-plus mr-1"></i>Dodaj
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-900/50 text-xs uppercase tracking-wider text-slate-400">
+            <tr>
+              <th class="text-left p-3 font-medium">Ticker</th>
+              <th class="text-left p-3 font-medium">Kategoria</th>
+              <th class="text-right p-3 font-medium">Wartość (zł)</th>
+              <th class="text-right p-3 font-medium">% portfela</th>
+              <th class="text-right p-3 font-medium">Zwrot</th>
+              <th class="text-right p-3 font-medium" id="projectionHeader">Bazowa 3Y</th>
+              <th class="p-3"></th>
+            </tr>
+          </thead>
+          <tbody id="positionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: ALOKACJA -->
+  <section id="tab-allocation" class="tab-content hidden">
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl p-5 border border-slate-800">
+        <h3 class="text-base font-semibold text-white mb-3">Klasy aktywów</h3>
+        <div class="relative h-64"><canvas id="chartAssets"></canvas></div>
+      </div>
+      <div class="glass rounded-2xl p-5 border border-slate-800">
+        <h3 class="text-base font-semibold text-white mb-3">Kategorie Lyncha</h3>
+        <div class="relative h-64"><canvas id="chartLynch"></canvas></div>
+      </div>
+      <div class="glass rounded-2xl p-5 border border-slate-800 md:col-span-2">
+        <h3 class="text-base font-semibold text-white mb-3">Top pozycje (wartość)</h3>
+        <div class="relative h-72"><canvas id="chartTop"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: SCENARIUSZE -->
+  <section id="tab-scenarios" class="tab-content hidden">
+
+    <!-- Przełącznik horyzontu -->
+    <div class="glass rounded-2xl p-4 border border-slate-800 mb-4 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h3 class="text-base font-semibold text-white">Horyzont projekcji</h3>
+        <p class="text-xs text-slate-400">Wybierz okres prognozowania. Wszystkie obliczenia uwzględniają dopłaty roczne.</p>
+      </div>
+      <div class="glass rounded-xl p-1 border border-slate-700 flex gap-1">
+        <button class="horizon-btn active px-5 py-2 rounded-lg text-sm font-medium" data-horizon="3">3 lata</button>
+        <button class="horizon-btn px-5 py-2 rounded-lg text-sm font-medium" data-horizon="8">8 lat</button>
+      </div>
+    </div>
+    
+    <!-- Suwaki -->
+    <div class="glass rounded-2xl p-5 border border-slate-800 mb-4">
+      <h3 class="text-base font-semibold text-white mb-1">Założenia rynkowe (zwrot z akcji w 3 lata)</h3>
+      <p class="text-xs text-slate-400 mb-4">Bazowy zakłada konsensus analityków. Niedźwiedzi to recesja + spadek capex AI. Optymistyczny — kontynuacja cyklu.</p>
+      
+      <div class="grid md:grid-cols-3 gap-4">
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-red-300"><i class="fa-solid fa-arrow-trend-down mr-1"></i>Niedźwiedzi</label>
+            <span class="text-sm font-mono text-white" id="bearLabel">-10%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderBear" min="-40" max="10" step="1" value="-10">
+          <p class="text-[10px] text-slate-500 mt-1">Akcje przeciętnie 3Y</p>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-violet-300"><i class="fa-solid fa-arrows-up-to-line mr-1"></i>Bazowy</label>
+            <span class="text-sm font-mono text-white" id="baseLabel">+25%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderBase" min="0" max="60" step="1" value="25">
+          <p class="text-[10px] text-slate-500 mt-1">Akcje przeciętnie 3Y</p>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-emerald-300"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Optymistyczny</label>
+            <span class="text-sm font-mono text-white" id="bullLabel">+50%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderBull" min="20" max="120" step="1" value="50">
+          <p class="text-[10px] text-slate-500 mt-1">Akcje przeciętnie 3Y</p>
+        </div>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-4 mt-5 pt-5 border-t border-slate-800">
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-percent mr-1"></i>Catalyst rocznie</label>
+            <span class="text-sm font-mono text-white" id="catLabel">8.0%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderCat" min="3" max="12" step="0.1" value="8">
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-percent mr-1"></i>Skarbowe rocznie</label>
+            <span class="text-sm font-mono text-white" id="treasLabel">4.5%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderTreas" min="2" max="8" step="0.1" value="4.5">
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-percent mr-1"></i>Gotówka rocznie</label>
+            <span class="text-sm font-mono text-white" id="cashLabel">3.5%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderCash" min="0" max="7" step="0.1" value="3.5">
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mt-5 pt-5 border-t border-slate-800">
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-piggy-bank mr-1"></i>Dopłata roczna (start)</label>
+            <span class="text-sm font-mono text-white" id="addLabel">30 000 zł</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderAdd" min="0" max="80000" step="1000" value="30000">
+          <p class="text-[10px] text-slate-500 mt-1">Bazując na Twojej historii: 27→32k rocznie</p>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-arrow-up-right-dots mr-1"></i>Wzrost dopłat rocznie</label>
+            <span class="text-sm font-mono text-white" id="contribGrowLabel">5.0%</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderContribGrow" min="0" max="15" step="0.5" value="5">
+          <p class="text-[10px] text-slate-500 mt-1">Wraz z inflacją/dochodami</p>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs text-slate-400"><i class="fa-solid fa-money-bill-wave mr-1"></i>USD/PLN za N lat</label>
+            <span class="text-sm font-mono text-white" id="fxLabel">3.65</span>
+          </div>
+          <input type="range" class="slider w-full" id="sliderFx" min="3.0" max="4.2" step="0.01" value="3.65">
+          <p class="text-[10px] text-slate-500 mt-1">Dzisiaj: 3.76. Konsensus 3Y: 3.55-3.80</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Karty scenariuszy -->
+    <div class="grid md:grid-cols-3 gap-4 mb-4">
+      <div class="glass rounded-2xl p-5 border border-slate-800 scenario-bear card-hover">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-arrow-trend-down text-red-400"></i>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider text-red-400">Niedźwiedzi</div>
+            <div class="text-[10px] text-slate-500">recesja + AI bubble</div>
+          </div>
+        </div>
+        <div class="text-3xl font-bold text-white" id="bearValue">—</div>
+        <div class="text-sm mt-1" id="bearReturn">—</div>
+        <div class="text-[10px] text-slate-500 mt-2" id="bearCagr">CAGR portfela: —</div>
+        <div class="text-[10px] text-slate-500 mt-1" id="bearContribs">Wpłaty: —</div>
+      </div>
+      
+      <div class="glass rounded-2xl p-5 border-2 border-violet-500/40 scenario-base card-hover relative">
+        <span class="absolute -top-2 right-3 text-[9px] gradient-bg text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Najlikelszy</span>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-bullseye text-violet-400"></i>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider text-violet-300">Bazowy</div>
+            <div class="text-[10px] text-slate-500">konsensus analityków</div>
+          </div>
+        </div>
+        <div class="text-3xl font-bold gradient-text" id="baseValue">—</div>
+        <div class="text-sm mt-1" id="baseReturn">—</div>
+        <div class="text-[10px] text-slate-500 mt-2" id="baseCagr">CAGR portfela: —</div>
+        <div class="text-[10px] text-slate-500 mt-1" id="baseContribs">Wpłaty: —</div>
+      </div>
+      
+      <div class="glass rounded-2xl p-5 border border-slate-800 scenario-bull card-hover">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider text-emerald-400">Optymistyczny</div>
+            <div class="text-[10px] text-slate-500">cykl AI trwa + GPW</div>
+          </div>
+        </div>
+        <div class="text-3xl font-bold text-white" id="bullValue">—</div>
+        <div class="text-sm mt-1" id="bullReturn">—</div>
+        <div class="text-[10px] text-slate-500 mt-2" id="bullCagr">CAGR portfela: —</div>
+        <div class="text-[10px] text-slate-500 mt-1" id="bullContribs">Wpłaty: —</div>
+      </div>
+    </div>
+
+    <!-- Wykres projekcji -->
+    <div class="glass rounded-2xl p-5 border border-slate-800 mb-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="text-base font-semibold text-white">Trajektoria wartości portfela</h3>
+        <div class="flex gap-3 text-[10px] text-slate-400">
+          <span><span class="inline-block w-2 h-2 rounded-full bg-violet-400 mr-1"></span>Wartość portfela</span>
+          <span><span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span>Suma wpłat (kapitał)</span>
+        </div>
+      </div>
+      <div class="relative h-80"><canvas id="chartProjection"></canvas></div>
+    </div>
+
+    <!-- Milestone: pierwszy milion -->
+    <div class="glass rounded-2xl p-5 border border-violet-500/30 bg-violet-500/5">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-trophy text-white"></i>
+        </div>
+        <div class="flex-1">
+          <h4 class="text-sm font-semibold text-white mb-1">Kiedy pierwszy milion?</h4>
+          <p class="text-xs text-slate-400 mb-2">Symulacja przy obecnej alokacji i dopłatach.</p>
+          <div class="grid md:grid-cols-3 gap-3 mt-3" id="milestoneCards"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: REKOMENDACJE -->
+  <section id="tab-recommendations" class="tab-content hidden">
+    <div class="space-y-4">
+      <div class="glass rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-bolt text-orange-400"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Krótkoterminowo (do końca 2026)</h3>
+        </div>
+        <ul class="space-y-3 text-sm" id="recsShort"></ul>
+      </div>
+      
+      <div class="glass rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-route text-violet-400"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Średnioterminowo (2027–2029)</h3>
+        </div>
+        <ul class="space-y-3 text-sm" id="recsMid"></ul>
+      </div>
+      
+      <div class="glass rounded-2xl p-5 border border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-chess-knight text-emerald-400"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Strategicznie (3-8 lat)</h3>
+        </div>
+        <ul class="space-y-3 text-sm" id="recsStrat"></ul>
+      </div>
+
+      <div class="glass rounded-2xl p-5 border border-violet-500/30 bg-violet-500/5">
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-quote-left text-2xl gradient-text"></i>
+          <div>
+            <p class="text-sm italic text-slate-300">"Wielkie majątki budują nie geniusze rynkowi, tylko cierpliwi pasażerowie compounded effect. Twoje 30 000 zł rocznie przez 8 lat to wehikuł, nie XTB."</p>
+            <p class="text-xs text-slate-500 mt-2">— parafraza Charliego Mungera</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[10px] text-slate-600 mt-8 pb-4">
+    Nie stanowi rekomendacji inwestycyjnej • Dane wzorowane na rzeczywistych • Zapis lokalnie (localStorage)
+  </footer>
+</div>
+
+<script>
+// =================== DANE STARTOWE ===================
+// Pozycje zsumowane do ~219 506 zł (zgodnie z stanem 24.06.2026).
+// Wartości można edytować — zapisują się w localStorage.
+const DEFAULT_DATA = {
+  positions: [
+    // === Akcje GPW — ~104 089 zł ===
+    { ticker: 'XTB', cat: 'Cyclical', class: 'Akcje GPW', value: 25000, returnPct: 146.5, growth: 25 },
+    { ticker: 'KRUK', cat: 'Stalwart', class: 'Akcje GPW', value: 11000, returnPct: 18, growth: 55 },
+    { ticker: 'SYNEKTIK', cat: 'Fast grower', class: 'Akcje GPW', value: 5500, returnPct: 69.4, growth: 70 },
+    { ticker: 'MOBRUK', cat: 'Asset play', class: 'Akcje GPW', value: 9000, returnPct: 22, growth: 48 },
+    { ticker: 'VERCOM', cat: 'Fast grower', class: 'Akcje GPW', value: 8000, returnPct: 15, growth: 70 },
+    { ticker: 'CBF', cat: 'Fast grower', class: 'Akcje GPW', value: 7500, returnPct: 12, growth: 55 },
+    { ticker: 'RAINBOW', cat: 'Cyclical', class: 'Akcje GPW', value: 5500, returnPct: 8, growth: 70 },
+    { ticker: 'DEVELIA', cat: 'Cyclical', class: 'Akcje GPW', value: 6000, returnPct: 75.6, growth: 55 },
+    { ticker: 'DOMDEV', cat: 'Cyclical', class: 'Akcje GPW', value: 4500, returnPct: 32, growth: 35 },
+    { ticker: 'UNIMOT', cat: 'Cyclical', class: 'Akcje GPW', value: 3500, returnPct: 38.7, growth: 30 },
+    { ticker: 'GPW', cat: 'Cyclical', class: 'Akcje GPW', value: 7500, returnPct: 130, growth: 20 },
+    { ticker: 'ATREM', cat: 'Asset play', class: 'Akcje GPW', value: 4500, returnPct: 18, growth: 65 },
+    { ticker: 'ELEKTROTIM', cat: 'Asset play', class: 'Akcje GPW', value: 4200, returnPct: 12, growth: 80 },
+    { ticker: 'KGHM', cat: 'Cyclical', class: 'Akcje GPW', value: 2000, returnPct: 8, growth: 50 },
+    { ticker: 'DINOPL', cat: 'Stalwart', class: 'Akcje GPW', value: 290, returnPct: -15, growth: 25 },
+    { ticker: 'PZU', cat: 'Stalwart', class: 'Akcje GPW', value: 599, returnPct: 8, growth: 20 },
+    // === Akcje US — ~21 852 zł ===
+    { ticker: 'NVO', cat: 'Stalwart', class: 'Akcje US', value: 1500, returnPct: -22, growth: 45, currency: 'USD' },
+    { ticker: 'MSFT', cat: 'Stalwart', class: 'Akcje US', value: 5500, returnPct: -14.4, growth: 35, currency: 'USD' },
+    { ticker: 'AMZN', cat: 'Fast grower', class: 'Akcje US', value: 3800, returnPct: -5, growth: 35, currency: 'USD' },
+    { ticker: 'NVDA', cat: 'Fast grower', class: 'Akcje US', value: 2200, returnPct: 22, growth: 45, currency: 'USD' },
+    { ticker: 'AMD', cat: 'Fast grower', class: 'Akcje US', value: 1800, returnPct: -8, growth: 35, currency: 'USD' },
+    { ticker: 'ADSK', cat: 'Turnaround', class: 'Akcje US', value: 1900, returnPct: -35.5, growth: 50, currency: 'USD' },
+    { ticker: 'PYPL', cat: 'Turnaround', class: 'Akcje US', value: 475, returnPct: -33.7, growth: 45, currency: 'USD' },
+    { ticker: 'IREN', cat: 'Fast grower', class: 'Akcje US', value: 2100, returnPct: 35, growth: 100, currency: 'USD' },
+    { ticker: 'CRWV', cat: 'Fast grower', class: 'Akcje US', value: 1900, returnPct: 18, growth: 80, currency: 'USD' },
+    { ticker: 'APLD', cat: 'Fast grower', class: 'Akcje US', value: 677, returnPct: -12, growth: 80, currency: 'USD' },
+    // === Catalyst — ~46 000 zł ===
+    { ticker: 'BST 2027', cat: 'Bond', class: 'Catalyst', value: 15500, returnPct: 5, growth: 0, yieldPct: 8.5 },
+    { ticker: 'KR1 2028', cat: 'Bond', class: 'Catalyst', value: 16000, returnPct: 5, growth: 0, yieldPct: 8.3 },
+    { ticker: 'PRF 2027', cat: 'Bond', class: 'Catalyst', value: 14500, returnPct: 4, growth: 0, yieldPct: 8.1 },
+    // === Skarbowe — ~10 019 zł ===
+    { ticker: 'EDO0729', cat: 'Bond', class: 'Skarbowe', value: 5019, returnPct: 3, growth: 0, yieldPct: 5.2 },
+    { ticker: 'ROD0431', cat: 'Bond', class: 'Skarbowe', value: 5000, returnPct: 2, growth: 0, yieldPct: 4.8 },
+    // === Gotówka — ~37 200 zł ===
+    { ticker: 'Konto IKE', cat: 'Cash', class: 'Gotówka', value: 12500, returnPct: 0, growth: 0, yieldPct: 4 },
+    { ticker: 'Konto maklerskie', cat: 'Cash', class: 'Gotówka', value: 9700, returnPct: 0, growth: 0, yieldPct: 0 },
+    { ticker: 'Lokata 6M', cat: 'Cash', class: 'Gotówka', value: 15000, returnPct: 0, growth: 0, yieldPct: 5 }
+  ],
+  // Łączny wkład własny od startu portfela (Q3 2023 + 3 lata dopłat)
+  // 53k (start) + 27k + 30k + 32k + 15k YTD = ~157k
+  startValue: 157000,
+  bear: -10, base: 25, bull: 50,
+  catYield: 8.0, treasYield: 4.5, cashYield: 3.5,
+  fx3y: 3.65, fxToday: 3.76,
+  addYearly: 30000,     // Bazowa roczna dopłata (na podstawie historii 27-32k)
+  contribGrowth: 5,     // Roczny wzrost dopłat (inflacja/dochody)
+  horizon: 3            // Wybrany horyzont w latach (3 lub 8)
+};
+
+let DATA = loadData();
+
+// =================== ŁADOWANIE / ZAPIS ===================
+// Wczytuje dane z localStorage lub używa wartości domyślnych. Uzupełnia brakujące pola.
+function loadData() {
+  try {
+    const saved = localStorage.getItem('portfel3Y8Y_v2');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Uzupełniamy nowe pola jeśli brakuje (kompatybilność wsteczna)
+      if (parsed.horizon === undefined) parsed.horizon = 3;
+      if (parsed.contribGrowth === undefined) parsed.contribGrowth = 5;
+      if (parsed.addYearly === undefined) parsed.addYearly = 30000;
+      return parsed;
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch(e) {
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+}
+
+// Zapisuje cały stan portfela do localStorage.
+function saveData() {
+  try { localStorage.setItem('portfel3Y8Y_v2', JSON.stringify(DATA)); }
+  catch(e) { console.warn('Nie udało się zapisać:', e); }
+}
+
+// Resetuje portfel do wartości domyślnych po potwierdzeniu.
+function resetData() {
+  if (confirm('Zresetować portfel do wartości domyślnych? Stracisz wszystkie edycje.')) {
+    DATA = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    saveData();
+    renderAll();
+  }
+}
+
+// Eksportuje aktualny stan portfela do pliku JSON.
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `portfel_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// =================== POMOCNICZE ===================
+// Formatuje liczbę jako kwotę w PLN.
+const fmt = (n) => new Intl.NumberFormat('pl-PL', {style:'currency', currency:'PLN', maximumFractionDigits:0}).format(n);
+const fmtPct = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+
+// Liczy sumę wartości pozycji wg klasy aktywów.
+function sumByClass(cls) {
+  return DATA.positions.filter(p => p.class === cls).reduce((s,p) => s + p.value, 0);
+}
+
+// Liczy łączną wartość portfela.
+function totalValue() { return DATA.positions.reduce((s,p) => s + p.value, 0); }
+
+// Liczy roczny CAGR dla pojedynczej pozycji w danym scenariuszu rynkowym.
+// scenarioStockGrowth3Y: % wzrost akcji w 3 lata (np. 25 = +25%)
+function annualCagrForPosition(pos, scenarioStockGrowth3Y) {
+  if (pos.class === 'Akcje GPW' || pos.class === 'Akcje US') {
+    // Indywidualny potencjał pozycji skalowany scenariuszem
+    const ownGrowth = pos.growth || 25;
+    const scenarioMul = scenarioStockGrowth3Y / 25;
+    const adjustedGrowth3Y = (ownGrowth * scenarioMul) / 100;
+    // Zamieniamy 3-letni wzrost na roczny CAGR
+    return Math.pow(1 + adjustedGrowth3Y, 1/3) - 1;
+  } else if (pos.class === 'Catalyst') {
+    return DATA.catYield / 100;
+  } else if (pos.class === 'Skarbowe') {
+    return DATA.treasYield / 100;
+  } else if (pos.class === 'Gotówka') {
+    return (pos.yieldPct ?? DATA.cashYield) / 100;
+  }
+  return 0;
+}
+
+// Liczy wartość pojedynczej pozycji za N lat (uwzględnia FX dla US).
+function projectedValueAtYears(pos, scenarioStockGrowth3Y, years) {
+  const annualCagr = annualCagrForPosition(pos, scenarioStockGrowth3Y);
+  let value = pos.value * Math.pow(1 + annualCagr, years);
+  // Korekta walutowa dla US (uproszczenie: ten sam mnożnik niezależnie od horyzontu)
+  if (pos.class === 'Akcje US' && pos.currency === 'USD') {
+    value = value * (DATA.fx3y / DATA.fxToday);
+  }
+  return value;
+}
+
+// Liczy wartość całego portfela za N lat z modelem dopłat rocznych (DCA).
+// Każda dopłata wchodzi pod koniec roku i kompowuje się od następnego roku.
+function projectPortfolio(scenarioStockGrowth3Y, years) {
+  // Krok 1: zbudować "rosnący" portfel z istniejących pozycji
+  // Każda pozycja ma własny CAGR, więc projekcja jest sumą prognoz indywidualnych
+  let valueFromExisting = DATA.positions.reduce((sum, p) => 
+    sum + projectedValueAtYears(p, scenarioStockGrowth3Y, years), 0);
+  
+  // Krok 2: dopłaty roczne (DCA) — średni CAGR portfela ważony alokacją
+  const tv = totalValue();
+  let weightedCagr = 0;
+  DATA.positions.forEach(p => {
+    weightedCagr += p.value * annualCagrForPosition(p, scenarioStockGrowth3Y);
+  });
+  const blendedCagr = tv > 0 ? weightedCagr / tv : 0;
+  
+  // Krok 3: każda dopłata wzrasta wraz z indeksacją, potem kompowuje
+  let contribValue = 0;
+  const growth = (DATA.contribGrowth || 5) / 100;
+  for (let i = 1; i <= years; i++) {
+    const yearContribution = DATA.addYearly * Math.pow(1 + growth, i - 1);
+    // Ta dopłata kompowuje przez (years - i) lat
+    contribValue += yearContribution * Math.pow(1 + blendedCagr, years - i);
+  }
+  
+  return {
+    totalValue: valueFromExisting + contribValue,
+    existingValue: valueFromExisting,
+    contribValue: contribValue,
+    blendedCagr: blendedCagr
+  };
+}
+
+// Liczy trajektorię portfela rok po roku (do wykresu).
+function projectionTrajectory(scenarioStockGrowth3Y, years) {
+  const tv = totalValue();
+  let weightedCagr = 0;
+  DATA.positions.forEach(p => {
+    weightedCagr += p.value * annualCagrForPosition(p, scenarioStockGrowth3Y);
+  });
+  const blendedCagr = tv > 0 ? weightedCagr / tv : 0;
+  
+  // FX impact dla US — jednorazowo na koniec
+  const usValue = DATA.positions.filter(p => p.class === 'Akcje US').reduce((s,p) => s + p.value, 0);
+  const fxMul = DATA.fx3y / DATA.fxToday;
+  
+  const points = [tv];
+  const contribPoints = [tv]; // Suma wpłat (kapitał włożony)
+  let value = tv;
+  let cumulativeContrib = tv;
+  const growth = (DATA.contribGrowth || 5) / 100;
+  
+  for (let i = 1; i <= years; i++) {
+    value = value * (1 + blendedCagr);
+    const yearContribution = DATA.addYearly * Math.pow(1 + growth, i - 1);
+    value += yearContribution;
+    cumulativeContrib += yearContribution;
+    
+    // Korekta FX na koniec horyzontu
+    let displayValue = value;
+    if (i === years) {
+      displayValue += usValue * Math.pow(1 + blendedCagr, i) * (fxMul - 1);
+    }
+    
+    points.push(displayValue);
+    contribPoints.push(cumulativeContrib);
+  }
+  return { points, contribPoints, blendedCagr };
+}
+
+// =================== RENDERING ===================
+// Renderuje karty dashboardu (góra strony).
+function renderStats() {
+  const total = totalValue();
+  const stocks = sumByClass('Akcje GPW') + sumByClass('Akcje US');
+  const bonds = sumByClass('Catalyst') + sumByClass('Skarbowe');
+  const cash = sumByClass('Gotówka');
+  
+  document.getElementById('statTotal').textContent = fmt(total);
+  document.getElementById('statStocks').textContent = fmt(stocks);
+  document.getElementById('statStocksPct').textContent = `${(stocks/total*100).toFixed(1)} % portfela`;
+  document.getElementById('statBonds').textContent = fmt(bonds);
+  document.getElementById('statBondsPct').textContent = `${(bonds/total*100).toFixed(1)} % portfela`;
+  document.getElementById('statCash').textContent = fmt(cash);
+  document.getElementById('statCashPct').textContent = `${(cash/total*100).toFixed(1)} % portfela`;
+  
+  const returnPct = ((total - DATA.startValue) / DATA.startValue * 100);
+  document.getElementById('statReturn').textContent = fmtPct(returnPct);
+}
+
+// Renderuje tabelę pozycji z polami edytowalnymi.
+function renderPositions() {
+  const body = document.getElementById('positionsBody');
+  const total = totalValue();
+  body.innerHTML = '';
+  
+  // Nagłówek kolumny "Projekcja" odzwierciedla wybrany horyzont
+  document.getElementById('projectionHeader').textContent = `Bazowa ${DATA.horizon}Y`;
+  
+  const classes = ['Akcje GPW', 'Akcje US', 'Catalyst', 'Skarbowe', 'Gotówka'];
+  
+  classes.forEach(cls => {
+    const items = DATA.positions.filter(p => p.class === cls);
+    if (items.length === 0) return;
+    
+    // Header grupy
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'bg-slate-900/30';
+    headerRow.innerHTML = `<td colspan="7" class="px-3 py-2 text-xs uppercase tracking-wider text-violet-400 font-semibold">${cls} — ${fmt(sumByClass(cls))} (${(sumByClass(cls)/total*100).toFixed(1)}%)</td>`;
+    body.appendChild(headerRow);
+    
+    items.forEach((p) => {
+      const globalIdx = DATA.positions.indexOf(p);
+      const projected = projectedValueAtYears(p, DATA.base, DATA.horizon);
+      const projectedGain = ((projected - p.value) / p.value * 100);
+      
+      const row = document.createElement('tr');
+      row.className = 'pos-row border-b border-slate-800/50';
+      row.innerHTML = `
+        <td class="p-3 font-medium text-white">${p.ticker}${p.currency === 'USD' ? '<span class="text-[9px] text-violet-400 ml-1">USD</span>' : ''}</td>
+        <td class="p-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">${p.cat}</span></td>
+        <td class="p-3 text-right">
+          <input class="edit-input text-right" type="number" value="${p.value}" onchange="updateValue(${globalIdx}, this.value)">
+        </td>
+        <td class="p-3 text-right text-slate-300">${(p.value/total*100).toFixed(2)}%</td>
+        <td class="p-3 text-right ${p.returnPct >= 0 ? 'text-emerald-400' : 'text-red-400'}">${fmtPct(p.returnPct)}</td>
+        <td class="p-3 text-right ${projectedGain >= 0 ? 'text-emerald-400' : 'text-red-400'}">${fmtPct(projectedGain)}</td>
+        <td class="p-3 text-right">
+          <button onclick="removePosition(${globalIdx})" class="text-slate-500 hover:text-red-400 transition-colors">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </td>
+      `;
+      body.appendChild(row);
+    });
+  });
+}
+
+// Aktualizuje wartość konkretnej pozycji po edycji.
+function updateValue(idx, val) {
+  const v = parseFloat(val);
+  if (!isNaN(v) && v >= 0) {
+    DATA.positions[idx].value = v;
+    saveData();
+    renderAll();
+  }
+}
+
+// Usuwa pozycję z portfela po potwierdzeniu.
+function removePosition(idx) {
+  if (confirm(`Usunąć pozycję ${DATA.positions[idx].ticker}?`)) {
+    DATA.positions.splice(idx, 1);
+    saveData();
+    renderAll();
+  }
+}
+
+// Dodaje nową pozycję poprzez prompt z użytkownikiem.
+function addPosition() {
+  const ticker = prompt('Ticker (np. KGHM):');
+  if (!ticker) return;
+  const value = parseFloat(prompt('Wartość w PLN:'));
+  if (isNaN(value)) return;
+  const classes = ['Akcje GPW', 'Akcje US', 'Catalyst', 'Skarbowe', 'Gotówka'];
+  const cls = prompt(`Klasa aktywów (${classes.join(' / ')}):`, 'Akcje GPW');
+  if (!classes.includes(cls)) { alert('Nieznana klasa.'); return; }
+  
+  DATA.positions.push({
+    ticker, class: cls,
+    cat: cls === 'Akcje GPW' || cls === 'Akcje US' ? 'Fast grower' : (cls === 'Gotówka' ? 'Cash' : 'Bond'),
+    value, returnPct: 0, growth: 25,
+    currency: cls === 'Akcje US' ? 'USD' : 'PLN'
+  });
+  saveData();
+  renderAll();
+}
+
+// =================== WYKRESY ===================
+let charts = {};
+
+// Tworzy wykres kołowy klas aktywów.
+function renderChartAssets() {
+  const ctx = document.getElementById('chartAssets');
+  if (!ctx) return;
+  if (charts.assets) charts.assets.destroy();
+  
+  const classes = ['Akcje GPW', 'Akcje US', 'Catalyst', 'Skarbowe', 'Gotówka'];
+  const data = classes.map(c => sumByClass(c));
+  const colors = ['#8b5cf6', '#6366f1', '#ec4899', '#10b981', '#f59e0b'];
+  
+  charts.assets = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: classes,
+      datasets: [{
+        data, backgroundColor: colors, borderColor: '#0f172a', borderWidth: 2, hoverOffset: 12
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 11 }, padding: 10, usePointStyle: true } },
+        tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.raw)} (${(c.raw/totalValue()*100).toFixed(1)}%)` } }
+      }
+    }
+  });
+}
+
+// Tworzy wykres kategorii Lyncha.
+function renderChartLynch() {
+  const ctx = document.getElementById('chartLynch');
+  if (!ctx) return;
+  if (charts.lynch) charts.lynch.destroy();
+  
+  const cats = {};
+  DATA.positions.forEach(p => { cats[p.cat] = (cats[p.cat] || 0) + p.value; });
+  
+  const colors = ['#8b5cf6', '#6366f1', '#a78bfa', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+  
+  charts.lynch = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(cats),
+      datasets: [{
+        data: Object.values(cats), backgroundColor: colors, borderColor: '#0f172a', borderWidth: 2, hoverOffset: 12
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 11 }, padding: 10, usePointStyle: true } },
+        tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.raw)}` } }
+      }
+    }
+  });
+}
+
+// Tworzy wykres słupkowy top pozycji.
+function renderChartTop() {
+  const ctx = document.getElementById('chartTop');
+  if (!ctx) return;
+  if (charts.top) charts.top.destroy();
+  
+  const sorted = [...DATA.positions].sort((a,b) => b.value - a.value).slice(0, 15);
+  
+  charts.top = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(p => p.ticker),
+      datasets: [{
+        label: 'Wartość (zł)',
+        data: sorted.map(p => p.value),
+        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+        borderColor: '#8b5cf6',
+        borderRadius: 8, borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => fmt(c.raw) } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', callback: (v) => (v/1000) + 'k' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+        y: { ticks: { color: '#cbd5e1', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// =================== SCENARIUSZE ===================
+// Renderuje 3 karty scenariuszy z wartościami i CAGR-ami.
+function renderScenarioCards() {
+  const today = totalValue();
+  const years = DATA.horizon;
+  
+  const bear = projectPortfolio(DATA.bear, years);
+  const base = projectPortfolio(DATA.base, years);
+  const bull = projectPortfolio(DATA.bull, years);
+  
+  // Suma wpłat w horyzoncie (na potrzeby wyświetlenia)
+  const growth = (DATA.contribGrowth || 5) / 100;
+  let totalContribs = 0;
+  for (let i = 1; i <= years; i++) {
+    totalContribs += DATA.addYearly * Math.pow(1 + growth, i - 1);
+  }
+  
+  const setCard = (id, result) => {
+    const gain = ((result.totalValue - today) / today * 100);
+    const cagr = (Math.pow(result.totalValue/today, 1/years) - 1) * 100;
+    document.getElementById(`${id}Value`).textContent = fmt(result.totalValue);
+    document.getElementById(`${id}Return`).innerHTML = `<span class="${gain >= 0 ? 'text-emerald-400' : 'text-red-400'}">${fmtPct(gain)}</span> <span class="text-slate-500">vs dziś</span>`;
+    document.getElementById(`${id}Cagr`).textContent = `CAGR portfela: ${cagr.toFixed(1)}%`;
+    document.getElementById(`${id}Contribs`).textContent = `Wpłaty łącznie: ${fmt(totalContribs)}`;
+  };
+  
+  setCard('bear', bear);
+  setCard('base', base);
+  setCard('bull', bull);
+  
+  // Aktualizacja kamieni milowych "kiedy 1 mln"
+  renderMilestones();
+}
+
+// Renderuje wykres liniowy projekcji w wybranym horyzoncie.
+function renderChartProjection() {
+  const ctx = document.getElementById('chartProjection');
+  if (!ctx) return;
+  if (charts.projection) charts.projection.destroy();
+  
+  const years = DATA.horizon;
+  const labels = ['Dziś', ...Array.from({length: years}, (_, i) => `Rok ${i+1}`)];
+  
+  const bearTraj = projectionTrajectory(DATA.bear, years);
+  const baseTraj = projectionTrajectory(DATA.base, years);
+  const bullTraj = projectionTrajectory(DATA.bull, years);
+  
+  charts.projection = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Niedźwiedzi', data: bearTraj.points, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 3 },
+        { label: 'Bazowy', data: baseTraj.points, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', tension: 0.3, fill: true, borderWidth: 3, pointRadius: 4 },
+        { label: 'Optymistyczny', data: bullTraj.points, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 3 },
+        { label: 'Kapitał włożony', data: baseTraj.contribPoints, borderColor: '#f59e0b', backgroundColor: 'transparent', borderDash: [5, 5], tension: 0.1, fill: false, borderWidth: 2, pointRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#cbd5e1', usePointStyle: true, font: { size: 11 } } },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.raw)}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+        y: { ticks: { color: '#94a3b8', callback: (v) => fmt(v) }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+      }
+    }
+  });
+}
+
+// Liczy w którym roku portfel osiąga pierwszy milion w danym scenariuszu.
+function yearsToMillion(scenarioStockGrowth3Y) {
+  const tv = totalValue();
+  let weightedCagr = 0;
+  DATA.positions.forEach(p => {
+    weightedCagr += p.value * annualCagrForPosition(p, scenarioStockGrowth3Y);
+  });
+  const blendedCagr = tv > 0 ? weightedCagr / tv : 0;
+  const growth = (DATA.contribGrowth || 5) / 100;
+  
+  let value = tv;
+  const TARGET = 1_000_000;
+  const MAX_YEARS = 25;
+  
+  for (let i = 1; i <= MAX_YEARS; i++) {
+    value = value * (1 + blendedCagr);
+    const yearContribution = DATA.addYearly * Math.pow(1 + growth, i - 1);
+    value += yearContribution;
+    if (value >= TARGET) return i;
+  }
+  return null;
+}
+
+// Renderuje 3 karty z prognozowanym rokiem osiągnięcia 1 mln zł.
+function renderMilestones() {
+  const yBear = yearsToMillion(DATA.bear);
+  const yBase = yearsToMillion(DATA.base);
+  const yBull = yearsToMillion(DATA.bull);
+  
+  const currentYear = 2026;
+  const makeCard = (label, color, years) => {
+    const targetYear = years ? currentYear + years : '>25';
+    const text = years ? `${years} lat` : 'powyżej 25 lat';
+    return `
+      <div class="rounded-xl p-3 border border-${color}-500/30 bg-${color}-500/5">
+        <div class="text-[10px] uppercase tracking-wider text-${color}-400 mb-1">${label}</div>
+        <div class="text-lg font-bold text-white">${text}</div>
+        <div class="text-[10px] text-slate-500">~${targetYear} r.</div>
+      </div>`;
+  };
+  
+  document.getElementById('milestoneCards').innerHTML = 
+    makeCard('Niedźwiedzi', 'red', yBear) +
+    makeCard('Bazowy', 'violet', yBase) +
+    makeCard('Optymistyczny', 'emerald', yBull);
+}
+
+// =================== REKOMENDACJE ===================
+const RECOMMENDATIONS = {
+  short: [
+    { icon: 'fa-scissors', color: 'orange', title: 'Trim XTB o ~30%', desc: 'Pozycja po +146% przekroczyła konsensus celów analityków. Realizuj ~7 500 zł — zostawiając 70% pozycji. Przerzucone środki = miesięczna dopłata z innego źródła.' },
+    { icon: 'fa-arrow-right', color: 'violet', title: 'Przerzuć na VERCOM + MSFT + AMZN', desc: 'Te pozycje są tańsze relatywnie do potencjału 3Y. Dolanie po przecenie obniża średnią cenę zakupu.' },
+    { icon: 'fa-broom', color: 'red', title: 'Skonsoliduj pozycje <1500 zł', desc: 'DINOPL (290), PZU (599), PYPL (475), APLD (677) — dolewaj do min. 1500 zł albo zamknij. Pozycje <0,5% nie mają wpływu na wynik, ale generują koszty i rozpraszają uwagę.' }
+  ],
+  mid: [
+    { icon: 'fa-plus', color: 'violet', title: 'Zwiększ ELEKTROTIM i ATREM', desc: 'Sektor obronny + grid = sekularny trend 2026-2029 (program Tarcza Wschód, fundusz SAFE 43,7 mld EUR). Cel +75-110% w 3 lata. Połączenie dwóch spółek w sektorze = dywersyfikacja w temacie.' },
+    { icon: 'fa-arrows-left-right-to-line', color: 'orange', title: 'Trim deweloperów po +75%', desc: 'DEVELIA/DOMDEV są cykliczne. Stopy NBP może wzrosnąć w 2026, II półrocze 2026 może być słabsze r/r. Zrealizuj 30% pozycji = zabezpieczenie zysku.' },
+    { icon: 'fa-globe-europe', color: 'emerald', title: 'Dodaj ekspozycję na EU', desc: 'Luka: ASML (~5000 zł), Schneider Electric, SAP. Dywersyfikacja walutowa (EUR) + quality compounders. Cel: 7% portfela do końca 2027.' },
+    { icon: 'fa-money-bill-trend-up', color: 'violet', title: 'Maksymalizuj IKE/IKZE', desc: 'Konto IKE 12 500 zł — sprawdź limit roczny IKE w 2026 (~26 000 zł). IKZE daje dodatkową ulgę PIT. To "darmowy" zwrot ~17-32% rocznie z ulgi.' }
+  ],
+  strat: [
+    { icon: 'fa-bullseye', color: 'violet', title: 'Target alokacji za 8 lat', desc: 'Akcje 55% • Catalyst 18% • Skarbowe 10% • Gotówka 12% • EU 5%. Wraz ze wzrostem portfela powyżej 500k zł stopniowo zwiększaj defensywne pozycje (cel: zachować realność emerytury prywatnej).' },
+    { icon: 'fa-coins', color: 'emerald', title: 'Compounding to Twoja superpotęga', desc: 'Przy 30k dopłat rocznie i 7% CAGR portfela: 1 milion zł osiągasz w ~9-10 lat (2035-2036). Każde 5 lat opóźnienia dopłat = ~250k zł mniej na koniec horyzontu.' },
+    { icon: 'fa-recycle', color: 'orange', title: 'Rolling Catalyst — strategia ciągłości', desc: 'BST 2027, PRF 2027, KR1 2028 — kiedy zapadną, rolluj na nowe emisje 7-9% (Kruk, Best, Cyfrowy Polsat, Develia, GPM). Trzymaj duration ~3 lata. Sumaryczny dochód roczny z Catalyst: ~3 700 zł.' },
+    { icon: 'fa-shield-halved', color: 'violet', title: 'Zabezpiecz pierwsze 100k przed sobą samym', desc: 'Po przekroczeniu 250k zł portfela rozważ "lock box" — wydziel 100k zł nie do ruszania (skarbowe długoterminowe lub stała pozycja w KRUK). To psychologiczne kotwiczenie zabezpiecza przed paniką podczas korekt.' }
+  ]
+};
+
+// Renderuje sekcję rekomendacji z karty Lyncha.
+function renderRecommendations() {
+  const colorMap = {
+    orange: 'border-orange-500/30 bg-orange-500/5 text-orange-300',
+    violet: 'border-violet-500/30 bg-violet-500/5 text-violet-300',
+    emerald: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300',
+    red: 'border-red-500/30 bg-red-500/5 text-red-300'
+  };
+  
+  const renderList = (id, items) => {
+    document.getElementById(id).innerHTML = items.map(r => `
+      <li class="flex gap-3 p-3 rounded-xl border ${colorMap[r.color]}">
+        <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${colorMap[r.color]}">
+          <i class="fa-solid ${r.icon}"></i>
+        </div>
+        <div class="flex-1">
+          <div class="font-medium text-white text-sm">${r.title}</div>
+          <div class="text-xs text-slate-400 mt-1">${r.desc}</div>
+        </div>
+      </li>
+    `).join('');
+  };
+  
+  renderList('recsShort', RECOMMENDATIONS.short);
+  renderList('recsMid', RECOMMENDATIONS.mid);
+  renderList('recsStrat', RECOMMENDATIONS.strat);
+}
+
+// =================== TABS ===================
+// Obsługa przełączania zakładek (Pozycje/Alokacja/Scenariusze/Rekomendacje).
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      const target = document.getElementById(`tab-${btn.dataset.tab}`);
+      target.classList.remove('hidden');
+      target.classList.add('fade-in');
+      
+      // Odśwież wykresy w danej zakładce
+      if (btn.dataset.tab === 'allocation') {
+        setTimeout(() => { renderChartAssets(); renderChartLynch(); renderChartTop(); }, 50);
+      } else if (btn.dataset.tab === 'scenarios') {
+        setTimeout(() => { renderChartProjection(); }, 50);
+      }
+    });
+  });
+}
+
+// Obsługa przełącznika horyzontu 3Y/8Y.
+function setupHorizonToggle() {
+  document.querySelectorAll('.horizon-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      DATA.horizon = parseInt(btn.dataset.horizon, 10);
+      saveData();
+      renderScenarioCards();
+      renderChartProjection();
+      renderPositions(); // odświeża kolumnę projekcji
+    });
+    // Ustaw stan początkowy przy ładowaniu
+    if (parseInt(btn.dataset.horizon, 10) === DATA.horizon) {
+      document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  });
+}
+
+// =================== SUWAKI ===================
+// Podpina obsługę suwaków scenariuszy i parametrów.
+function setupSliders() {
+  const bindSlider = (id, labelId, dataKey, formatter) => {
+    const slider = document.getElementById(id);
+    const label = document.getElementById(labelId);
+    slider.value = DATA[dataKey];
+    label.textContent = formatter(DATA[dataKey]);
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      DATA[dataKey] = v;
+      label.textContent = formatter(v);
+      saveData();
+      renderScenarioCards();
+      renderChartProjection();
+      renderPositions();
+    });
+  };
+  
+  const fmtPctSlider = (v) => `${v > 0 ? '+' : ''}${v}%`;
+  const fmtRaw = (v) => `${v.toFixed(1)}%`;
+  const fmtFx = (v) => `${parseFloat(v).toFixed(2)}`;
+  const fmtMoney = (v) => fmt(parseFloat(v));
+  
+  bindSlider('sliderBear', 'bearLabel', 'bear', fmtPctSlider);
+  bindSlider('sliderBase', 'baseLabel', 'base', fmtPctSlider);
+  bindSlider('sliderBull', 'bullLabel', 'bull', fmtPctSlider);
+  bindSlider('sliderCat', 'catLabel', 'catYield', fmtRaw);
+  bindSlider('sliderTreas', 'treasLabel', 'treasYield', fmtRaw);
+  bindSlider('sliderCash', 'cashLabel', 'cashYield', fmtRaw);
+  bindSlider('sliderFx', 'fxLabel', 'fx3y', fmtFx);
+  bindSlider('sliderAdd', 'addLabel', 'addYearly', fmtMoney);
+  bindSlider('sliderContribGrow', 'contribGrowLabel', 'contribGrowth', fmtRaw);
+}
+
+// =================== MAIN RENDER ===================
+// Główna funkcja odświeżająca cały interfejs.
+function renderAll() {
+  renderStats();
+  renderPositions();
+  renderScenarioCards();
+  // Wykresy renderują się dopiero po kliknięciu zakładki (dla wydajności)
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+  if (activeTab === 'allocation') { renderChartAssets(); renderChartLynch(); renderChartTop(); }
+  if (activeTab === 'scenarios') { renderChartProjection(); }
+}
+
+// =================== START ===================
+document.addEventListener('DOMContentLoaded', () => {
+  setupTabs();
+  setupHorizonToggle();
+  setupSliders();
+  renderRecommendations();
+  renderAll();
+});
+</script>
+
+</body>
+</html>
