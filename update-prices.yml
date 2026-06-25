@@ -1,0 +1,38 @@
+name: Aktualizacja cen portfela
+
+# GPW zamyka sesję o 17:00 CET/CEST. Uruchamiamy 17:40 czasu Warszawy z buforem.
+# UWAGA: cron działa w UTC, a Polska zmienia czas (CET = UTC+1, CEST = UTC+2).
+# Dlatego dajemy DWA wpisy cron — jeden trafia w czas zimowy, drugi w letni.
+# Workflow i tak sprawdzi datę i nadpisze plik tylko jeśli dane są nowe.
+on:
+  schedule:
+    - cron: "40 16 * * 1-5"   # 17:40 CEST (czas letni, marzec-październik)
+    - cron: "40 15 * * 1-5"   # 16:40 CET  (czas zimowy, październik-marzec) -> 17:40 lokalnie
+  workflow_dispatch: {}        # pozwala uruchomić ręcznie z zakładki Actions
+
+permissions:
+  contents: write
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repozytorium
+        uses: actions/checkout@v4
+
+      - name: Ustaw Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pobierz aktualne ceny
+        run: python3 scripts/fetch_prices.py
+        continue-on-error: true   # nie blokuj commitu nawet jeśli część tickerów padła
+
+      - name: Zacommituj zmiany (jeśli są)
+        run: |
+          git config user.name "portfolio-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/prices.json
+          git diff --cached --quiet || git commit -m "Aktualizacja cen: $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
