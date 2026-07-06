@@ -1,33 +1,38 @@
 ticker,class,quantity,avgPrice,yieldPct
-XTB,Akcje GPW,230,44.30,
-KRUK,Akcje GPW,26,400.00,
-SYNEKTIK,Akcje GPW,18,181.20,
-MOBRUK,Akcje GPW,24,304.00,
-VERCOM,Akcje GPW,70,100.40,
-CBF,Akcje GPW,42,159.00,
-RAINBOW,Akcje GPW,39,129.70,
-DEVELIA,Akcje GPW,571,5.98,
-DOMDEV,Akcje GPW,69,49.30,
-UNIMOT,Akcje GPW,9,274.00,
-GPW,Akcje GPW,88,37.00,
-ATREM,Akcje GPW,72,62.50,
-ELEKTROTIM,Akcje GPW,80,52.50,
-DINOPL,Akcje GPW,1,650.00,
-PZU,Akcje GPW,13,42.60,
-NVO,Akcje US,25,77.00,
-MSFT,Akcje US,12,525.00,
-AMZN,Akcje US,17,226.00,
-NVDA,Akcje US,10,180.00,
-AMD,Akcje US,15,130.00,
-ADSK,Akcje US,8,367.00,
-PYPL,Akcje US,8,89.00,
-IREN,Akcje US,50,30.80,
-CRWV,Akcje US,23,68.60,
-APLD,Akcje US,75,10.20,
-BST 2027,Catalyst,155,100.00,8.5
-KR1 2028,Catalyst,160,100.00,8.3
-PRF 2027,Catalyst,145,100.00,8.1
-EDO0729,Skarbowe,5019,1.00,5.2
-ROD0431,Skarbowe,5000,1.00,4.8
-Konto IKE,Gotówka,12500,1.00,4.0
-Konto maklerskie,Gotówka,9700,1.00,0.0
+XTB,Akcje GPW,228,45.84,
+KRUK,Akcje GPW,25,413.21,
+SYNEKTIK,Akcje GPW,17,182.53,
+MOBRUK,Akcje GPW,28,297.90,
+VERCOM,Akcje GPW,66,117.20,
+CBF,Akcje GPW,20,188.02,
+RAINBOW,Akcje GPW,73,121.55,
+DEVELIA,Akcje GPW,590,5.97,
+DOMDEV,Akcje GPW,21,246.23,
+UNIMOT,Akcje GPW,23,113.85,
+GPW,Akcje GPW,85,38.05,
+ATREM,Akcje GPW,40,56.96,
+ELEKTROTIM,Akcje GPW,169,46.82,
+DINOPL,Akcje GPW,10,39.74,
+PZU,Akcje GPW,9,56.47,
+NVO,Akcje US,9,45.00,
+MSFT,Akcje US,4,411.57,
+AMZN,Akcje US,6,222.37,
+NVDA,Akcje US,5,200.05,
+AMD,Akcje US,2,142.24,
+ADSK,Akcje US,2,292.55,
+PYPL,Akcje US,3,61.77,
+IREN,Akcje US,8,44.11,
+CRWV,Akcje US,4,105.62,
+APLD,Akcje US,4,46.95,
+BST0527,Catalyst,10,1027.05,8.55
+PRF0727,Catalyst,250,101.92,8.34
+KR10228,Catalyst,100,103.20,7.85
+DOR0128,Skarbowe,50,100.00,3.90
+DOR0826,Skarbowe,50,100.00,4.10
+Konto Alior Bank,Gotówka,20812.66,1.00,0.0
+Akcje XTB PLN (gotowka),Gotówka,3323.55,1.00,0.0
+Akcje XTB USD (gotowka w PLN),Gotówka,2503.40,1.00,0.0
+Gotowka banknoty PLN,Gotówka,2720.00,1.00,0.0
+Gotowka banknoty USD (w PLN),Gotówka,931.76,1.00,0.0
+Dywidendy w drodze (UNT+RBW+ELT),Gotówka,1011.30,1.00,0.0
+Akcje IKE Alior (gotowka),Gotówka,626.54,1.00,0.0
