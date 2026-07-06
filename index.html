@@ -47,6 +47,30 @@
 </head>
 <body class="text-slate-200">
 
+<!-- ============ EKRAN LOGOWANIA (nakładka pełnoekranowa) ============ -->
+<div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 50%, #020617 100%);">
+  <div class="glass rounded-2xl border border-slate-800 p-8 w-full max-w-md card-hover">
+    <div class="flex flex-col items-center mb-6">
+      <div class="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mb-4">
+        <i class="fa-solid fa-lock text-2xl text-white"></i>
+      </div>
+      <h2 class="text-xl font-bold gradient-text" id="authTitle">Odblokuj portfel</h2>
+      <p class="text-xs text-slate-400 mt-1 text-center" id="authSubtitle">Podaj hasło, aby odszyfrować dane portfela.</p>
+    </div>
+    <div class="space-y-3">
+      <input type="password" id="authPassword" placeholder="Hasło" autocomplete="current-password"
+        class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all">
+      <input type="password" id="authPassword2" placeholder="Powtórz hasło" autocomplete="new-password"
+        class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all hidden">
+      <button id="authSubmit" class="btn-grad w-full py-3 rounded-xl text-white font-medium">
+        <i class="fa-solid fa-unlock mr-2"></i><span id="authBtnLabel">Odblokuj</span>
+      </button>
+      <p id="authError" class="text-xs text-red-400 text-center hidden"></p>
+      <p class="text-[10px] text-slate-600 text-center mt-2">Dane szyfrowane AES-256 w Twojej przeglądarce. Hasła nie da się odzyskać — zapisz je w bezpiecznym miejscu.</p>
+    </div>
+  </div>
+</div>
+
 <div class="max-w-7xl mx-auto px-4 py-6">
 
   <!-- HEADER -->
@@ -64,6 +88,9 @@
         </div>
       </div>
       <div class="flex gap-2 flex-wrap">
+        <button onclick="lockApp()" class="px-3 py-2 rounded-xl border border-slate-700 hover:border-amber-500 hover:text-amber-400 transition-all text-xs">
+          <i class="fa-solid fa-lock mr-1"></i>Zablokuj
+        </button>
         <button onclick="document.getElementById('csvInput').click()" class="px-3 py-2 rounded-xl border border-slate-700 hover:border-emerald-500 hover:text-emerald-400 transition-all text-xs">
           <i class="fa-solid fa-file-csv mr-1"></i>Import CSV
         </button>
@@ -379,65 +406,152 @@
 // Model pozycji: quantity (ilość) x avgPrice (cena zakupu) = koszt własny.
 // currentPrice doładowywane z data/prices.json po tickerze (jeśli dostępne).
 // Dla Catalyst/Skarbowe/Gotówka quantity*avgPrice = wartość nominalna (cena ~1 lub ~100).
+// Dane z eksportu myfund.pl (05.07.2026), wartosc calkowita: 222 910,95 zl.
+// Kurs USD/PLN z pliku: 3.742. Ceny US w USD.
 const DEFAULT_DATA = {
   positions: [
-    // === Akcje GPW ===
-    { ticker: 'XTB', cat: 'Cyclical', class: 'Akcje GPW', quantity: 230, avgPrice: 44.30, currentPrice: 109.40, growth: 25 },
-    { ticker: 'KRUK', cat: 'Stalwart', class: 'Akcje GPW', quantity: 26, avgPrice: 400.00, currentPrice: 426.00, growth: 55 },
-    { ticker: 'SYNEKTIK', cat: 'Fast grower', class: 'Akcje GPW', quantity: 18, avgPrice: 181.20, currentPrice: 307.00, growth: 70 },
-    { ticker: 'MOBRUK', cat: 'Asset play', class: 'Akcje GPW', quantity: 24, avgPrice: 304.00, currentPrice: 371.00, growth: 48 },
-    { ticker: 'VERCOM', cat: 'Fast grower', class: 'Akcje GPW', quantity: 70, avgPrice: 100.40, currentPrice: 115.50, growth: 70 },
-    { ticker: 'CBF', cat: 'Fast grower', class: 'Akcje GPW', quantity: 42, avgPrice: 159.00, currentPrice: 178.00, growth: 55 },
-    { ticker: 'RAINBOW', cat: 'Cyclical', class: 'Akcje GPW', quantity: 39, avgPrice: 129.70, currentPrice: 140.00, growth: 70 },
-    { ticker: 'DEVELIA', cat: 'Cyclical', class: 'Akcje GPW', quantity: 571, avgPrice: 5.98, currentPrice: 10.50, growth: 55 },
-    { ticker: 'DOMDEV', cat: 'Cyclical', class: 'Akcje GPW', quantity: 69, avgPrice: 49.30, currentPrice: 65.00, growth: 35 },
-    { ticker: 'UNIMOT', cat: 'Cyclical', class: 'Akcje GPW', quantity: 9, avgPrice: 274.00, currentPrice: 380.00, growth: 30 },
-    { ticker: 'GPW', cat: 'Cyclical', class: 'Akcje GPW', quantity: 88, avgPrice: 37.00, currentPrice: 85.20, growth: 20 },
-    { ticker: 'ATREM', cat: 'Asset play', class: 'Akcje GPW', quantity: 72, avgPrice: 52.50, currentPrice: 62.00, growth: 65 },
-    { ticker: 'ELEKTROTIM', cat: 'Asset play', class: 'Akcje GPW', quantity: 80, avgPrice: 46.40, currentPrice: 52.00, growth: 80 },
-    { ticker: 'DINOPL', cat: 'Stalwart', class: 'Akcje GPW', quantity: 1, avgPrice: 650.00, currentPrice: 440.00, growth: 25 },
-    { ticker: 'PZU', cat: 'Stalwart', class: 'Akcje GPW', quantity: 13, avgPrice: 42.60, currentPrice: 46.00, growth: 20 },
-    // === Akcje US (avgPrice i currentPrice w USD) ===
-    { ticker: 'NVO', cat: 'Stalwart', class: 'Akcje US', quantity: 25, avgPrice: 77.00, currentPrice: 60.00, growth: 45, currency: 'USD' },
-    { ticker: 'MSFT', cat: 'Stalwart', class: 'Akcje US', quantity: 12, avgPrice: 525.00, currentPrice: 450.00, growth: 35, currency: 'USD' },
-    { ticker: 'AMZN', cat: 'Fast grower', class: 'Akcje US', quantity: 17, avgPrice: 226.00, currentPrice: 215.00, growth: 35, currency: 'USD' },
-    { ticker: 'NVDA', cat: 'Fast grower', class: 'Akcje US', quantity: 10, avgPrice: 180.00, currentPrice: 220.00, growth: 45, currency: 'USD' },
-    { ticker: 'AMD', cat: 'Fast grower', class: 'Akcje US', quantity: 15, avgPrice: 130.00, currentPrice: 120.00, growth: 35, currency: 'USD' },
-    { ticker: 'ADSK', cat: 'Turnaround', class: 'Akcje US', quantity: 8, avgPrice: 367.00, currentPrice: 237.00, growth: 50, currency: 'USD' },
-    { ticker: 'PYPL', cat: 'Turnaround', class: 'Akcje US', quantity: 8, avgPrice: 89.00, currentPrice: 59.00, growth: 45, currency: 'USD' },
-    { ticker: 'IREN', cat: 'Fast grower', class: 'Akcje US', quantity: 50, avgPrice: 30.80, currentPrice: 41.58, growth: 100, currency: 'USD' },
-    { ticker: 'CRWV', cat: 'Fast grower', class: 'Akcje US', quantity: 23, avgPrice: 68.60, currentPrice: 81.00, growth: 80, currency: 'USD' },
-    { ticker: 'APLD', cat: 'Fast grower', class: 'Akcje US', quantity: 75, avgPrice: 10.20, currentPrice: 9.00, growth: 80, currency: 'USD' },
-    // === Catalyst (obligacje korporacyjne, cena ~ 100 = wartość nominalna) ===
-    { ticker: 'BST 2027', cat: 'Bond', class: 'Catalyst', quantity: 155, avgPrice: 100.00, currentPrice: 100.00, growth: 0, yieldPct: 8.5 },
-    { ticker: 'KR1 2028', cat: 'Bond', class: 'Catalyst', quantity: 160, avgPrice: 100.00, currentPrice: 100.00, growth: 0, yieldPct: 8.3 },
-    { ticker: 'PRF 2027', cat: 'Bond', class: 'Catalyst', quantity: 145, avgPrice: 100.00, currentPrice: 100.00, growth: 0, yieldPct: 8.1 },
-    // === Skarbowe (cena ~1 = wartość nominalna w PLN) ===
-    { ticker: 'EDO0729', cat: 'Bond', class: 'Skarbowe', quantity: 5019, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 5.2 },
-    { ticker: 'ROD0431', cat: 'Bond', class: 'Skarbowe', quantity: 5000, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 4.8 },
-    // === Gotówka ===
-    { ticker: 'Konto IKE', cat: 'Cash', class: 'Gotówka', quantity: 12500, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 4.0 },
-    { ticker: 'Konto maklerskie', cat: 'Cash', class: 'Gotówka', quantity: 9700, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 }
+    // === Akcje GPW (15) ===
+    { ticker: 'XTB', cat: 'Cyclical', class: 'Akcje GPW', quantity: 228, avgPrice: 45.84, currentPrice: 118.40, growth: 25 },
+    { ticker: 'KRUK', cat: 'Stalwart', class: 'Akcje GPW', quantity: 25, avgPrice: 413.21, currentPrice: 421.80, growth: 55 },
+    { ticker: 'SYNEKTIK', cat: 'Fast grower', class: 'Akcje GPW', quantity: 17, avgPrice: 182.53, currentPrice: 361.40, growth: 70 },
+    { ticker: 'MOBRUK', cat: 'Asset play', class: 'Akcje GPW', quantity: 28, avgPrice: 297.90, currentPrice: 377.00, growth: 48 },
+    { ticker: 'VERCOM', cat: 'Fast grower', class: 'Akcje GPW', quantity: 66, avgPrice: 117.20, currentPrice: 127.60, growth: 70 },
+    { ticker: 'CBF', cat: 'Fast grower', class: 'Akcje GPW', quantity: 20, avgPrice: 188.02, currentPrice: 193.90, growth: 55 },
+    { ticker: 'RAINBOW', cat: 'Cyclical', class: 'Akcje GPW', quantity: 73, avgPrice: 121.55, currentPrice: 145.10, growth: 70 },
+    { ticker: 'DEVELIA', cat: 'Cyclical', class: 'Akcje GPW', quantity: 590, avgPrice: 5.97, currentPrice: 10.80, growth: 55 },
+    { ticker: 'DOMDEV', cat: 'Cyclical', class: 'Akcje GPW', quantity: 21, avgPrice: 246.23, currentPrice: 249.00, growth: 35 },
+    { ticker: 'UNIMOT', cat: 'Cyclical', class: 'Akcje GPW', quantity: 23, avgPrice: 113.85, currentPrice: 175.60, growth: 30 },
+    { ticker: 'GPW', cat: 'Cyclical', class: 'Akcje GPW', quantity: 85, avgPrice: 38.05, currentPrice: 95.75, growth: 20 },
+    { ticker: 'ATREM', cat: 'Asset play', class: 'Akcje GPW', quantity: 40, avgPrice: 56.96, currentPrice: 61.90, growth: 65 },
+    { ticker: 'ELEKTROTIM', cat: 'Asset play', class: 'Akcje GPW', quantity: 169, avgPrice: 46.82, currentPrice: 57.65, growth: 80 },
+    { ticker: 'DINOPL', cat: 'Stalwart', class: 'Akcje GPW', quantity: 10, avgPrice: 39.74, currentPrice: 27.70, growth: 25 },
+    { ticker: 'PZU', cat: 'Stalwart', class: 'Akcje GPW', quantity: 9, avgPrice: 56.47, currentPrice: 68.26, growth: 20 },
+    // === Akcje US (NASDAQ 9 + NYSE 1) — ceny w USD ===
+    { ticker: 'NVO', cat: 'Stalwart', class: 'Akcje US', quantity: 9, avgPrice: 45.00, currentPrice: 50.43, growth: 45, currency: 'USD' },
+    { ticker: 'MSFT', cat: 'Stalwart', class: 'Akcje US', quantity: 4, avgPrice: 411.57, currentPrice: 390.49, growth: 35, currency: 'USD' },
+    { ticker: 'AMZN', cat: 'Fast grower', class: 'Akcje US', quantity: 6, avgPrice: 222.37, currentPrice: 242.67, growth: 35, currency: 'USD' },
+    { ticker: 'NVDA', cat: 'Fast grower', class: 'Akcje US', quantity: 5, avgPrice: 200.05, currentPrice: 194.83, growth: 45, currency: 'USD' },
+    { ticker: 'AMD', cat: 'Fast grower', class: 'Akcje US', quantity: 2, avgPrice: 142.24, currentPrice: 517.82, growth: 35, currency: 'USD' },
+    { ticker: 'ADSK', cat: 'Turnaround', class: 'Akcje US', quantity: 2, avgPrice: 292.55, currentPrice: 207.48, growth: 50, currency: 'USD' },
+    { ticker: 'PYPL', cat: 'Turnaround', class: 'Akcje US', quantity: 3, avgPrice: 61.77, currentPrice: 45.47, growth: 45, currency: 'USD' },
+    { ticker: 'IREN', cat: 'Fast grower', class: 'Akcje US', quantity: 8, avgPrice: 44.11, currentPrice: 38.82, growth: 100, currency: 'USD' },
+    { ticker: 'CRWV', cat: 'Fast grower', class: 'Akcje US', quantity: 4, avgPrice: 105.62, currentPrice: 81.74, growth: 80, currency: 'USD' },
+    { ticker: 'APLD', cat: 'Fast grower', class: 'Akcje US', quantity: 4, avgPrice: 46.95, currentPrice: 33.06, growth: 80, currency: 'USD' },
+    // === Catalyst (3) ===
+    { ticker: 'BST0527', cat: 'Bond', class: 'Catalyst', quantity: 10, avgPrice: 1027.05, currentPrice: 1014.90, growth: 0, yieldPct: 8.55 },
+    { ticker: 'PRF0727', cat: 'Bond', class: 'Catalyst', quantity: 250, avgPrice: 101.92, currentPrice: 101.10, growth: 0, yieldPct: 8.34 },
+    { ticker: 'KR10228', cat: 'Bond', class: 'Catalyst', quantity: 100, avgPrice: 103.20, currentPrice: 102.25, growth: 0, yieldPct: 7.85 },
+    // === Skarbowe (2) ===
+    { ticker: 'DOR0128', cat: 'Bond', class: 'Skarbowe', quantity: 50, avgPrice: 100.00, currentPrice: 100.05, growth: 0, yieldPct: 3.90 },
+    { ticker: 'DOR0826', cat: 'Bond', class: 'Skarbowe', quantity: 50, avgPrice: 100.00, currentPrice: 100.06, growth: 0, yieldPct: 4.10 },
+    // === Konta gotowkowe (wartosci w PLN) ===
+    { ticker: 'Konto Alior Bank', cat: 'Cash', class: 'Gotówka', quantity: 20812.66, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Akcje XTB PLN (gotówka)', cat: 'Cash', class: 'Gotówka', quantity: 3323.55, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Akcje XTB USD (gotówka, w PLN)', cat: 'Cash', class: 'Gotówka', quantity: 2503.40, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Gotówka banknoty PLN', cat: 'Cash', class: 'Gotówka', quantity: 2720.00, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Gotówka banknoty USD (w PLN)', cat: 'Cash', class: 'Gotówka', quantity: 931.76, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Dywidendy w drodze (UNT+RBW+ELT)', cat: 'Cash', class: 'Gotówka', quantity: 1011.30, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 },
+    { ticker: 'Akcje IKE Alior (gotówka)', cat: 'Cash', class: 'Gotówka', quantity: 626.54, avgPrice: 1.00, currentPrice: 1.00, growth: 0, yieldPct: 0.0 }
   ],
-  startValue: 157000,
+  startValue: 181420, // = 222 910,95 / (1 + 22,87%) — stopa zwrotu z myfund.pl (05.07.2026)
   bear: -10, base: 25, bull: 50,
-  catYield: 8.0, treasYield: 4.5, cashYield: 3.5,
-  fx3y: 3.65, fxToday: 3.76,
+  catYield: 8.0, treasYield: 4.0, cashYield: 1.0,
+  fx3y: 3.65, fxToday: 3.742,
   addYearly: 30000,
   contribGrowth: 5,
   horizon: 3,
   lastPriceFetchDate: null   // znacznik dnia (YYYY-MM-DD), kiedy ostatnio wczytano prices.json
 };
 
-let DATA = loadData();
+// ====================================================================
+// WARSTWA BEZPIECZEŃSTWA — szyfrowanie danych portfela hasłem (AES-256-GCM)
+// Jak to działa (prostymi słowami):
+// 1. Przy pierwszym uruchomieniu ustalasz hasło. Z hasła wyliczany jest klucz
+//    (funkcja PBKDF2 "miesza" hasło 150 000 razy — łamanie siłowe jest bardzo wolne).
+// 2. Dane portfela są szyfrowane tym kluczem i dopiero wtedy trafiają do pamięci
+//    przeglądarki (localStorage). Bez hasła są nieczytelnym ciągiem znaków.
+// 3. Hasło NIE jest nigdzie zapisywane — zapisany jest tylko "weryfikator",
+//    który pozwala sprawdzić, czy podane hasło jest poprawne.
+// UWAGA: to chroni dane zapisane w przeglądarce i dostęp do widoku aplikacji.
+// Kod źródłowy strony w publicznym repo pozostaje jawny — dlatego nie trzymaj
+// prawdziwych kwot w DEFAULT_DATA, tylko wgrywaj je przez Import CSV po zalogowaniu.
+// ====================================================================
+
+const AUTH_KEY = 'pf_auth_v1';     // sól + weryfikator hasła
+const DATA_KEY = 'pf_data_enc_v1'; // zaszyfrowane dane portfela
+let CRYPTO_KEY = null;             // klucz AES trzymany tylko w pamięci (znika po zamknięciu karty)
+let DATA = null;                   // dane portfela — wypełniane po odblokowaniu
+
+// Zamienia tekst na bajty i odwrotnie (pomocnicze dla Web Crypto API).
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+// Wylicza klucz szyfrujący z hasła użytkownika (PBKDF2 -> AES-GCM 256 bit).
+async function deriveKey(password, salt) {
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+
+// Szyfruje dowolny obiekt JS do postaci zapisywalnej w localStorage.
+async function encryptData(obj) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, CRYPTO_KEY, enc.encode(JSON.stringify(obj)));
+  return JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(cipher)) });
+}
+
+// Odszyfrowuje dane z localStorage z powrotem do obiektu JS.
+async function decryptData(stored) {
+  const { iv, ct } = JSON.parse(stored);
+  const plain = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: new Uint8Array(iv) }, CRYPTO_KEY, new Uint8Array(ct)
+  );
+  return JSON.parse(dec.decode(plain));
+}
+
+// Sprawdza, czy hasło zostało już kiedyś ustawione na tym urządzeniu.
+function hasPasswordSetup() { return localStorage.getItem(AUTH_KEY) !== null; }
+
+// Tworzy nowe hasło: zapisuje sól + zaszyfrowany "token kontrolny" do weryfikacji.
+async function setupPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  CRYPTO_KEY = await deriveKey(password, salt);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const verifier = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, CRYPTO_KEY, enc.encode('OK'));
+  localStorage.setItem(AUTH_KEY, JSON.stringify({
+    salt: Array.from(salt), iv: Array.from(iv), verifier: Array.from(new Uint8Array(verifier))
+  }));
+}
+
+// Próbuje odblokować aplikację podanym hasłem. Zwraca true/false.
+async function tryUnlock(password) {
+  try {
+    const auth = JSON.parse(localStorage.getItem(AUTH_KEY));
+    CRYPTO_KEY = await deriveKey(password, new Uint8Array(auth.salt));
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(auth.iv) }, CRYPTO_KEY, new Uint8Array(auth.verifier)
+    );
+    return dec.decode(plain) === 'OK';
+  } catch (e) {
+    CRYPTO_KEY = null;
+    return false;
+  }
+}
+
+// Blokuje aplikację: czyści klucz z pamięci i przeładowuje stronę.
+function lockApp() { CRYPTO_KEY = null; location.reload(); }
+
 let PRICES_META = { updated_at: null, source: null };
 
 // =================== ŁADOWANIE / ZAPIS LOKALNY ===================
-function loadData() {
+// Wczytuje ZASZYFROWANE dane portfela z localStorage (wymaga odblokowanego klucza).
+async function loadData() {
   try {
-    const saved = localStorage.getItem('portfelGPW_v3');
-    if (saved) {
-      const parsed = JSON.parse(saved);
+    const saved = localStorage.getItem(DATA_KEY);
+    if (saved && CRYPTO_KEY) {
+      const parsed = await decryptData(saved);
       if (parsed.horizon === undefined) parsed.horizon = 3;
       if (parsed.contribGrowth === undefined) parsed.contribGrowth = 5;
       if (parsed.addYearly === undefined) parsed.addYearly = 30000;
@@ -445,13 +559,17 @@ function loadData() {
     }
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
   } catch(e) {
+    console.warn('Nie udało się odszyfrować danych — używam domyślnych:', e);
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
   }
 }
 
+// Zapisuje dane portfela w postaci ZASZYFROWANEJ (AES-GCM) do localStorage.
 function saveData() {
-  try { localStorage.setItem('portfelGPW_v3', JSON.stringify(DATA)); }
-  catch(e) { console.warn('Nie udało się zapisać:', e); }
+  if (!CRYPTO_KEY) return; // bez odblokowania nie zapisujemy niczego
+  encryptData(DATA)
+    .then(payload => localStorage.setItem(DATA_KEY, payload))
+    .catch(e => console.warn('Nie udało się zapisać (szyfrowanie):', e));
 }
 
 function resetData() {
@@ -1120,7 +1238,10 @@ function renderAll() {
 }
 
 // =================== START ===================
-document.addEventListener('DOMContentLoaded', async () => {
+// Właściwa inicjalizacja aplikacji — uruchamiana DOPIERO po poprawnym zalogowaniu.
+async function initApp() {
+  DATA = await loadData();
+  document.getElementById('authOverlay').classList.add('hidden');
   setupTabs();
   setupHorizonToggle();
   setupSliders();
@@ -1128,6 +1249,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderRecommendations();
   renderAll();
   await autoRefreshIfStale();
+}
+
+// Obsługa ekranu logowania: pierwszy raz = ustawienie hasła, potem = odblokowanie.
+document.addEventListener('DOMContentLoaded', () => {
+  const isFirstRun = !hasPasswordSetup();
+  const pw1 = document.getElementById('authPassword');
+  const pw2 = document.getElementById('authPassword2');
+  const errEl = document.getElementById('authError');
+
+  if (isFirstRun) {
+    document.getElementById('authTitle').textContent = 'Ustaw hasło portfela';
+    document.getElementById('authSubtitle').textContent = 'Pierwsze uruchomienie — utwórz hasło, którym będą szyfrowane Twoje dane.';
+    document.getElementById('authBtnLabel').textContent = 'Utwórz i wejdź';
+    pw2.classList.remove('hidden');
+  }
+
+  // Pokazuje komunikat błędu pod przyciskiem.
+  const showError = (msg) => { errEl.textContent = msg; errEl.classList.remove('hidden'); };
+
+  // Wspólna obsługa kliknięcia/Enter: tworzy hasło lub odblokowuje.
+  const submit = async () => {
+    errEl.classList.add('hidden');
+    const password = pw1.value;
+    if (password.length < 6) { showError('Hasło musi mieć co najmniej 6 znaków.'); return; }
+
+    if (isFirstRun) {
+      if (password !== pw2.value) { showError('Hasła nie są identyczne.'); return; }
+      await setupPassword(password);
+      await initApp();
+    } else {
+      const ok = await tryUnlock(password);
+      if (ok) { await initApp(); }
+      else { showError('Nieprawidłowe hasło.'); pw1.value = ''; pw1.focus(); }
+    }
+  };
+
+  document.getElementById('authSubmit').addEventListener('click', submit);
+  pw1.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+  pw2.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+  pw1.focus();
 });
 </script>
 
